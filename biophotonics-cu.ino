@@ -4,8 +4,9 @@
 #include <Arduino_GFX_Library.h>
 #include <pico/util/queue.h>
 #include <array>
+#include "heartRate.h" 
 
-#define I2C_SDA 4
+#define I2C_SDA 4 
 #define I2C_SCL 5
 
 #define TFT_CS   17
@@ -14,6 +15,9 @@
 #define TFT_DC   20
 #define TFT_RST  21
 #define TFT_BL   22
+
+#define BUZZER_PIN   27
+
 
 #define SPI_SPEED 75'000'000
 
@@ -198,6 +202,7 @@ void setup1() {
 
   // brightness 0-255, averaging, mode 2 = red+IR, sample rate, pulse width, ADC range
   sensor.setup(60, 4, 2, 100, 411, 4096);
+  tone(BUZZER_PIN, 2000, 80);
 }
 
 void loop1() {
@@ -206,7 +211,11 @@ void loop1() {
     uint32_t red = sensor.getFIFORed();
     uint32_t ir = sensor.getFIFOIR();
     Sample s = { red, ir };
-    queue_try_add(&sample_queue, &s);
+    if (s.ir > MIN_ACCEPTABLE_IR && checkForBeat(s.ir)) {
+      tone(BUZZER_PIN, 1500, 30);   // 1.5 kHz, 30 ms tick per heartbeat
+    }
+    queue_try_add(&sample_queue, &s);sensor
+    
 
     sensor.nextSample();
   }
